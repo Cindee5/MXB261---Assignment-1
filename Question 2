@@ -1,0 +1,65 @@
+Data0 = readmatrix('sample2022.txt');
+figure
+h = histogram(Data0, 20, 'Normalization','probability')
+
+for i = 1: h.NumBins
+    probabilities(i,1) = h.Values(i)/sum(h.Values);
+end
+
+cumulative_prob = cumsum(probabilities);
+
+
+d_ranges = zeros(length(h.BinEdges),1);
+
+for i = 1: length(h.BinEdges)
+    d_ranges(i,1) = h.BinEdges(i);
+end
+cumulative_prob = [d_ranges [0;cumulative_prob]];
+
+N = 500; %no of samples
+rng(1);
+
+for i = 1:N
+    u = rand; %sampling a random value U(0,1)
+    for j = 2:h.NumBins +1
+        if u <= cumulative_prob(j,2) %index the next value of a row vector and determine if that indexed value is less than the random value from uniform distribution.
+            x1 = cumulative_prob(j-1,1); % set x1 = left RV
+            x2 = cumulative_prob(j,1); % set x2 = right RV
+            y1 =  cumulative_prob(j-1,2); % set y1 = left CDF value
+            y2 = cumulative_prob(j,2); %set y2 = right CDF value
+            
+            break
+        end
+    end
+    sample_CDF_continuous(i) = (u-y1)*(x2-x1)/(y2-y1)+x1;
+end
+
+DataNew = sample_CDF_continuous;
+
+
+
+%Plotting the sampled values vs the experiment data
+figure
+sgtitle('Probability Distribution Bins = 20')
+subplot(1,2,1)
+h2 = histogram(Data0,'Normalization','pdf')
+set(h2,'FaceColor','r')
+title('Experimental Data')
+xlabel('Time to division d')
+ylabel('Frequence in N samples')
+xlim([0 8])
+
+subplot(1,2,2)
+h3 = histogram(DataNew,'Normalization','pdf')
+set(h3, 'FaceColor','auto')
+title('Sample Data N = 500')
+xlabel('Time to division d')
+ylabel('Frequence in N samples')
+xlim([0 8])
+
+
+%%Calculating DKL
+DKL_0toNew = sum(Data0.*(log(Data0./DataNew)))
+
+DKL2_Newto0 = sum(DataNew.*(log(DataNew./Data0)))
+
